@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive RDMA Learning Guide</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            position: relative;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000"><defs><radialGradient id="g" cx="50%" cy="50%"><stop offset="0%" stop-color="rgba(255,255,255,0.1)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></radialGradient></defs><circle cx="200" cy="200" r="3" fill="url(%23g)"/><circle cx="800" cy="300" r="2" fill="url(%23g)"/><circle cx="400" cy="600" r="2" fill="url(%23g)"/><circle cx="900" cy="700" r="3" fill="url(%23g)"/><circle cx="100" cy="800" r="2" fill="url(%23g)"/></svg>') repeat;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(-20px) translateX(10px); }
+            100% { transform: translateY(0px) translateX(0px); }
+        }
+
+        .hero-content {
+            z-index: 10;
+            position: relative;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            animation: slideInDown 1s ease-out;
+        }
+
+        .hero p {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            animation: slideInUp 1s ease-out 0.3s both;
+        }
+
+        .cta-button {
+            background: linear-gradient(45deg, #ff6b6b, #feca57);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: slideInUp 1s ease-out 0.6s both;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        @keyframes slideInDown {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Navigation */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            padding: 15px 0;
+            transform: translateY(-100%);
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav.visible {
+            transform: translateY(0);
+        }
+
+        .nav ul {
+            display: flex;
+            justify-content: center;
+            list-style: none;
+            flex-wrap: wrap;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .nav li {
+            margin: 5px 15px;
+        }
+
+        .nav a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .nav a:hover, .nav a.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        /* Section Styles */
+        .section {
+            min-height: 100vh;
+            padding: 100px 0;
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.8s ease;
+        }
+
+        .section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .section:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .section:nth-child(odd) {
+            background: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .section-header h2 {
+            font-size: 3rem;
+            color: #333;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .section-header h2::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 4px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+
+        .section-header p {
+            font-size: 1.2rem;
+            color: #666;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Interactive Demo */
+        .interactive-demo {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            margin: 40px 0;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+
+        .network-comparison {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        .network-demo {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .network-demo:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            border-color: #667eea;
+        }
+
+        .network-demo h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+
+        .data-flow {
+            position: relative;
+            height: 200px;
+            background: #e9ecef;
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .data-packet {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 50%;
+            animation: moveData 3s infinite;
+        }
+
+        .rdma-packet {
+            background: #ff6b6b;
+            animation: moveDataFast 1s infinite;
+        }
+
+        @keyframes moveData {
+            0% { left: -20px; }
+            100% { left: calc(100% - 20px); }
+        }
+
+        @keyframes moveDataFast {
+            0% { left: -20px; }
+            100% { left: calc(100% - 20px); }
+        }
+
+        .data-flow::after {
+            content: 'Data Flow';
+            color: #666;
+            font-size: 1rem;
+            z-index: 1;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin: 40px 0;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .stat-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .timeline::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            background: linear-gradient(to bottom, #667eea, #764ba2);
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .timeline-item {
+            position: relative;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin: 30px 0;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: calc(50% - 30px);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-item:hover {
+            transform: scale(1.02);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .timeline-item:nth-child(odd) {
+            left: 0;
+        }
+
+        .timeline-item:nth-child(even) {
+            left: calc(50% + 30px);
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            top: 30px;
+        }
+
+        .timeline-item:nth-child(odd)::before {
+            right: -42px;
+        }
+
+        .timeline-item:nth-child(even)::before {
+            left: -42px;
+        }
+
+        .timeline-year {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        /* Quiz Section */
+        .quiz-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .quiz-question {
+            font-size: 1.3rem;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .quiz-options {
+            display: grid;
+            gap: 15px;
+        }
+
+        .quiz-option {
+            background: #f8f9fa;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quiz-option:hover {
+            background: #e9ecef;
+            border-color: #667eea;
+        }
+
+        .quiz-option.correct {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+
+        .quiz-option.incorrect {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        /* Complete Guide */
+        .guide-content {
+            background: white;
+            padding: 60px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            margin: 40px 0;
+            line-height: 1.8;
+        }
+
+        .guide-section h3 {
+            color: #667eea;
+            margin: 30px 0 15px 0;
+            font-size: 1.4rem;
+        }
+
+        .guide-section p {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .guide-section ul {
+            margin: 15px 0;
+            padding-left: 25px;
+        }
+
+        .guide-section li {
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .highlight-box {
+            background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+            padding: 25px;
+            border-radius: 15px;
+            margin: 25px 0;
+            border-left: 5px solid #667eea;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .hero p { font-size: 1.2rem; }
+            .section-header h2 { font-size: 2rem; }
+            .network-comparison { grid-template-columns: 1fr; }
+            .timeline-item { 
+                width: calc(100% - 40px); 
+                left: 0 !important; 
+                margin-left: 40px;
+            }
+            .timeline::after { left: 20px; }
+            .timeline-item::before { 
+                left: -42px !important; 
+                right: auto !important; 
+            }
+            .guide-content { padding: 30px 20px; }
+            .section { padding: 60px 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav" id="nav">
+        <ul>
+            <li><a href="#home" class="nav-link">Home</a></li>
+            <li><a href="#what" class="nav-link">What is RDMA</a></li>
+            <li><a href="#history" class="nav-link">History</a></li>
+            <li><a href="#performance" class="nav-link">Performance</a></li>
+            <li><a href="#types" class="nav-link">RDMA Types</a></li>
+            <li><a href="#quiz" class="nav-link">Quiz</a></li>
+            <li><a href="#guide" class="nav-link">Complete Guide</a></li>
+        </ul>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <h1>Master RDMA Technology</h1>
+            <p>Remote Direct Memory Access - The Network Revolution</p>
+            <button class="cta-button" onclick="scrollToSection('what')">Start Learning</button>
+        </div>
+    </section>
+
+    <!-- What is RDMA Section -->
+    <section class="section" id="what">
+        <div class="container">
+            <div class="section-header">
+                <h2>What is RDMA?</h2>
+                <p>Discover how RDMA revolutionizes network communication by creating a direct highway between computers' memory banks</p>
+            </div>
+
+            <div class="interactive-demo">
+                <h3 style="text-align: center; margin-bottom: 40px; color: #333;">Traditional vs RDMA Networking</h3>
+                <div class="network-comparison">
+                    <div class="network-demo">
+                        <h3>Traditional TCP/IP</h3>
+                        <div class="data-flow">
+                            <div class="data-packet"></div>
+                        </div>
+                        <ul style="color: #666; line-height: 1.8;">
+                            <li>High CPU usage (50-100%)</li>
+                            <li>Multiple memory copies</li>
+                            <li>High latency (50-200μs)</li>
+                            <li>Complex software stack</li>
+                        </ul>
+                    </div>
+                    <div class="network-demo">
+                        <h3>RDMA</h3>
+                        <div class="data-flow">
+                            <div class="data-packet rdma-packet"></div>
+                        </div>
+                        <ul style="color: #666; line-height: 1.8;">
+                            <li>Low CPU usage (<5%)</li>
+                            <li>Zero-copy networking</li>
+                            <li>Ultra-low latency (1-5μs)</li>
+                            <li>Direct memory access</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">10-100x</div>
+                    <div class="stat-label">Latency Improvement</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">95%</div>
+                    <div class="stat-label">CPU Usage Reduction</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">400+</div>
+                    <div class="stat-label">Gbps Throughput</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- History Section -->
+    <section class="section" id="history">
+        <div class="container">
+            <div class="section-header">
+                <h2>RDMA Evolution Timeline</h2>
+                <p>Journey through the development of RDMA from Intel's NGIO project to modern enterprise deployments</p>
+            </div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-year">1998</div>
+                    <h4>Intel NGIO Project</h4>
+                    <p>Intel releases NGIO specification, joined by Sun Microsystems and Dell</p>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-year">2000</div>
+                    <h4>InfiniBand Born</h4>
+                    <p>InfiniBand Architecture Specification v1.0 released by IBTA</p>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-year">2003</div>
+                    <h4>First Major Deployment</h4>
+                    <p>Virginia Tech System X supercomputer uses InfiniBand</p>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-year">2005</div>
+                    <h4>Linux Integration</h4>
+                    <p>InfiniBand support added to Linux kernel v2.6.11</p>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-year">2012</div>
+                    <h4>Enterprise Adoption</h4>
+                    <p>Microsoft adds RDMA support in Windows Server 2012</p>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-year">2020</div>
+                    <h4>NVIDIA Era</h4>
+                    <p>NVIDIA acquires Mellanox, AI/ML drives RDMA growth</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Performance Section -->
+    <section class="section" id="performance">
+        <div class="container">
+            <div class="section-header">
+                <h2>Performance Impact</h2>
+                <p>See how RDMA transforms real-world applications with dramatic performance improvements</p>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">4x</div>
+                    <div class="stat-label">Weather Modeling Speedup<br><small>48 hours → 12 hours</small></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">10x</div>
+                    <div class="stat-label">Trading Execution<br><small>150μs → 15μs</small></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">3.5x</div>
+                    <div class="stat-label">AI Model Training<br><small>7 days → 2 days</small></div>
+                </div>
+            </div>
+
+            <div class="interactive-demo">
+                <h3 style="text-align: center; margin-bottom: 30px;">Real-World Performance Examples</h3>
+                <div class="highlight-box">
+                    <h4 style="color: #333; margin-bottom: 15px;">High-Frequency Trading</h4>
+                    <p>A major trading firm reduced order execution time from 150 microseconds to 15 microseconds using RDMA, providing crucial competitive advantage in algorithmic trading.</p>
+                </div>
+                <div class="highlight-box">
+                    <h4 style="color: #333; margin-bottom: 15px;">Scientific Computing</h4>
+                    <p>Weather modeling centers report 4x faster climate simulations, enabling more detailed forecasts and better disaster preparedness.</p>
+                </div>
+                <div class="highlight-box">
+                    <h4 style="color: #333; margin-bottom: 15px;">AI/ML Training</h4>
+                    <p>Large language model training time reduced from 7 days to 2 days, allowing researchers to iterate faster and explore more models.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- RDMA Types Section -->
+    <section class="section" id="types">
+        <div class="container">
+            <div class="section-header">
+                <h2>RDMA Protocol Types</h2>
+                <p>Understand the three main RDMA implementations and their trade-offs</p>
+            </div>
+
+            <div class="network-comparison">
+                <div class="network-demo">
+                    <h3>InfiniBand</h3>
+                    <div class="stat-number" style="font-size: 2rem; color: #28a745; text-align: center;">1-5μs</div>
+                    <div class="stat-label" style="text-align: center;">Ultra-low latency</div>
+                    <ul style="color: #666; line-height: 1.8; margin-top: 20px;">
+                        <li>✅ Lowest latency possible</li>
+                        <li>✅ Guaranteed lossless delivery</li>
+                        <li>❌ Requires special infrastructure</li>
+                        <li>❌ Higher cost</li>
+                    </ul>
+                </div>
+                <div class="network-demo">
+                    <h3>RoCE (RDMA over Ethernet)</h3>
+                    <div class="stat-number" style="font-size: 2rem; color: #ffc107; text-align: center;">5-20μs</div>
+                    <div class="stat-label" style="text-align: center;">Balanced performance</div>
+                    <ul style="color: #666; line-height: 1.8; margin-top: 20px;">
+                        <li>✅ Uses Ethernet infrastructure</li>
+                        <li>✅ Industry-wide support</li>
+                        <li>❌ Complex network configuration</li>
+                        <li>❌ Higher latency than InfiniBand</li>
+                    </ul>
+                </div>
+                <div class="network-demo">
+                    <h3>iWARP</h3>
+                    <div class="stat-number" style="font-size: 2rem; color: #dc3545; text-align: center;">20-50μs</div>
+                    <div class="stat-label" style="text-align: center;">Easy deployment</div>
+                    <ul style="color: #666; line-height: 1.8; margin-top: 20px;">
+                        <li>✅ Standard TCP/IP networks</li>
+                        <li>✅ Easiest to deploy</li>
+                        <li>❌ Highest latency</li>
+                        <li>❌ Scalability limitations</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quiz Section -->
+    <section class="section" id="quiz">
+        <div class="container">
+            <div class="section-header">
+                <h2>Test Your Knowledge</h2>
+                <p>Challenge yourself with these RDMA concepts and see how much you've learned</p>
+            </div>
+
+            <div class="quiz-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div id="quizContent">
+                    <div class="quiz-question" id="quizQuestion">
+                        What is the primary advantage of RDMA over traditional networking?
+                    </div>
+                    <div class="quiz-options" id="quizOptions">
+                        <div class="quiz-option" onclick="selectAnswer(0)">Higher bandwidth capacity</div>
+                        <div class="quiz-option" onclick="selectAnswer(1)">Direct memory access bypassing CPU</div>
+                        <div class="quiz-option" onclick="selectAnswer(2)">Better security features</div>
+                        <div class="quiz-option" onclick="selectAnswer(3)">Lower hardware costs</div>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 30px;">
+                    <span id="quizScore">Question 1 of 5</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Complete Guide Section -->
+    <section class="section" id="guide">
+        <div class="container">
+            <div class="section-header">
+                <h2>Complete RDMA Guide</h2>
+                <p>In-depth technical documentation covering all aspects of RDMA technology</p>
+            </div>
+
+            <div class="guide-content">
+                <div class="guide-section">
+                    <h3>Table of Contents</h3>
+                    <ol style="margin-bottom: 30px;">
+                        <li><a href="#guide-what" style="color: #667eea; text-decoration: none;">What is RDMA? (The Technology Explained)</a></li>
+                        <li><a href="#guide-who" style="color: #667eea; text-decoration: none;">Who Uses RDMA and Who Created It?</a></li>
+                        <li><a href="#guide-where" style="color: #667eea; text-decoration: none;">Where is RDMA Used?</a></li>
+                        <li><a href="#guide-when" style="color: #667eea; text-decoration: none;">When Was RDMA Developed and When Should You Use It?</a></li>
+                        <li><a href="#guide-why" style="color: #667eea; text-decoration: none;">Why Does RDMA Matter?</a></li>
+                        <li><a href="#guide-standard-vs-enterprise" style="color: #667eea; text-decoration: none;">Standard RDMA vs Enterprise RDMA</a></li>
+                        <li><a href="#guide-technical" style="color: #667eea; text-decoration: none;">Deep Technical Details</a></li>
+                    </ol>
+
+                    <h3 id="guide-what">What is RDMA? (The Technology Explained)</h3>
+                    
+                    <h4 style="color: #764ba2; margin: 25px 0 15px 0;">The Fundamentals</h4>
+                    <p><strong>Remote Direct Memory Access (RDMA)</strong> is a revolutionary networking technology that allows one computer to directly access the memory of another computer over a network without involving either computer's main processor (CPU) or operating system. Think of it as creating a direct highway between two computers' memory banks, bypassing all the usual traffic jams and checkpoints.</p>
+
+                    <h4 style="color: #764ba2; margin: 25px 0 15px 0;">The Problem RDMA Solves</h4>
+                    <p>To understand RDMA, first imagine how traditional networking works:</p>
+
+                    <div class="highlight-box">
+                        <strong>Traditional Network Communication (TCP/IP):</strong>
+                        <ol style="margin-top: 15px;">
+                            <li><strong>Application</strong> on Computer A wants to send data to Computer B</li>
+                            <li>Data goes from <strong>Application → Operating System Kernel</strong></li>
+                            <li><strong>Kernel</strong> breaks data into packets and adds network headers</li>
+                            <li>Data travels through <strong>multiple software layers</strong> (TCP stack, IP stack, device drivers)</li>
+                            <li><strong>Network card</strong> finally sends the data</li>
+                            <li>On Computer B, the process <strong>reverses completely</strong></li>
+                            <li>Data gets <strong>copied multiple times</strong> in memory during this journey</li>
+                            <li><strong>CPU</strong> is heavily involved at every step</li>
+                        </ol>
+                    </div>
+
+                    <p>This traditional approach has several problems:</p>
+                    <ul>
+                        <li><strong>High CPU usage</strong> (the processor is busy handling network traffic instead of your actual work)</li>
+                        <li><strong>Multiple memory copies</strong> (data gets copied from application → kernel → network card and back)</li>
+                        <li><strong>High latency</strong> (all those software layers and copies take time)</li>
+                        <li><strong>Limited throughput</strong> (the CPU becomes a bottleneck for network speed)</li>
+                    </ul>
+
+                    <h4 style="color: #764ba2; margin: 25px 0 15px 0;">How RDMA Works Differently</h4>
+                    <div class="highlight-box">
+                        <strong>RDMA Communication:</strong>
+                        <ol style="margin-top: 15px;">
+                            <li><strong>Application</strong> tells the RDMA network card: "Take this data from memory location X and put it at memory location Y on that remote computer"</li>
+                            <li><strong>Network card</strong> directly reads from memory location X</li>
+                            <li>Data travels over the network with minimal packet processing</li>
+                            <li><strong>Remote network card</strong> directly writes to memory location Y</li>
+                            <li><strong>Neither CPU is involved</strong> in the actual data transfer</li>
+                            <li><strong>No copying</strong> occurs - data moves directly from source memory to destination memory</li>
+                        </ol>
+                    </div>
+
+                    <h4 style="color: #764ba2; margin: 25px 0 15px 0;">Key RDMA Concepts</h4>
+                    <p><strong>Zero-Copy Networking:</strong> RDMA achieves "zero-copy" networking, meaning data doesn't get copied multiple times during transmission. Instead, it moves directly from the source application's memory to the destination application's memory.</p>
+
+                    <p><strong>Kernel Bypass:</strong> RDMA completely bypasses the operating system kernel during data transfers. The network hardware handles everything directly, freeing up the CPU for other tasks.</p>
+
+                    <p><strong>Direct Memory Access:</strong> Just like local DMA (Direct Memory Access) allows devices to access system memory without CPU intervention, RDMA extends this concept across the network.</p>
+
+                    <h3 id="guide-who">Who Uses RDMA and Who Created It?</h3>
+                    
+                    <h4 style="color: #764ba2; margin: 25px 0 15px 0;">The History and Creators</h4>
+                    <p><strong>Late 1990s - The Beginning:</strong></p>
+                    <ul>
+                        <li>Intel led a project called NGIO (Next Generation I/O) with specifications released in 1998, joined by Sun Microsystems and Dell</li>
+                        <li>Compaq, IBM, and Hewlett-Packard backed a competing standard called Future I/O</li>
+                        <li>These competing efforts were merged to avoid fragmentation</li>
+                    </ul>
+
+                    <p><strong>2000 - InfiniBand Born:</strong></p>
+                    <ul>
+                        <li>The InfiniBand Trade Association (IBTA) was formed, including hardware vendors and software companies like Microsoft</li>
+                        <li>Version 1.0 of the InfiniBand Architecture Specification was released in 2000</li>
+                        <li>Mellanox was founded in 1999 to develop NGIO technology and by 2001 shipped InfiniBand products at 10 Gbit/s speeds</li>
+                    </ul>
+
+                    <p><strong>2000s - Evolution and Setbacks:</strong></p>
+                    <ul>
+                        <li>After the dot-com bubble burst, there was industry hesitation to invest in this far-reaching technology</li>
+                        <li>By 2002, Intel announced it would focus on developing PCI Express instead of shipping InfiniBand chips</li>
+                        <li>Microsoft discontinued InfiniBand development in favor of extending Ethernet</li>
+                        <li>However, Sun Microsystems and Hitachi continued to support InfiniBand</li>
+                    </ul>
+
+                    <p><strong>2003-2005 - Gaining Traction:</strong></p>
+                    <ul>
+                        <li>In 2003, the System X supercomputer at Virginia Tech used InfiniBand in what was the third largest computer in the world</li>
+                        <li>The OpenIB Alliance (later OpenFabrics Alliance) was founded in 2004 to develop open-source Linux kernel support</li>
+                        <li>By February 2005, InfiniBand support was accepted into Linux kernel version 2.6.11</li>
+                    </ul>
+
+                    <p><strong>2010s-Present - Modern RDMA:</strong></p>
+                    <ul>
+                        <li>Development of RoCE (RDMA over Converged Ethernet) made RDMA accessible over standard Ethernet networks</li>
+                        <li>iWARP protocol enabled RDMA over TCP/IP networks</li>
+                        <li>NVIDIA acquired Mellanox in 2020, consolidating RDMA leadership</li>
+                    </ul>
+
+                    <h4 style="color: #764ba2; margin: 25px 0 15px 0;">Who Uses RDMA Today?</h4>
+                    <p><strong>Technology Companies:</strong></p>
+                    <ul>
+                        <li><strong>NVIDIA/Mellanox</strong>: The dominant RDMA hardware manufacturer</li>
+                        <li><strong>Broadcom</strong>: Major RDMA network card producer</li>
+                        <li><strong>Intel</strong>: Supports both iWARP and RoCE protocols</li>
+                        <li><strong>Microsoft</strong>: Uses RDMA in Windows Server and Azure</li>
+                        <li><strong>IBM</strong>: Extensive RDMA support in enterprise products</li>
+                    </ul>
+
+                    <p><strong>Industries:</strong></p>
+                    <ul>
+                        <li><strong>Financial Services</strong>: High-frequency trading, risk modeling</li>
+                        <li><strong>Oil & Gas</strong>: Seismic data processing, reservoir simulation</li>
+                        <li><strong>Automotive</strong>: Crash simulation, autonomous vehicle development</li>
+                        <li><strong>Aerospace</strong>: Computational fluid dynamics, structural analysis</li>
+                        <li><strong>Biotechnology</strong>: Drug discovery, genomic analysis</li>
+                    </ul>
+
+                    <p><strong>Cloud Providers:</strong></p>
+                    <ul>
+                        <li>Amazon Web Services (EFA - Elastic Fabric Adapter)</li>
+                        <li>Microsoft Azure (InfiniBand in HPC offerings)</li>
+                        <li>Google Cloud Platform (HPC and AI workloads)</li>
+                        <li>Meta/Facebook (massive-scale distributed systems)</li>
+                    </ul>
+
+                    <h3 id="guide-where">Where is RDMA Used?</h3>
+                    
+                    <h4 style="color: #764ba2; margin: 25px 0 15px 0;">Geographic Distribution</h4>
+                    <p><strong>United States</strong>: Largest concentration of RDMA deployments</p>
+                    <ul>
+                        <li>Silicon Valley tech companies</li>
+                        <li>Wall Street financial firms</li>
+                        <li>National laboratories and universities</li>
+                        <li>Cloud provider data centers</li>
+                    </ul>
+
+                    <p><strong>Europe</strong>: Growing adoption in research and finance</p>
+                    <ul>
+                        <li>CERN (particle physics research)</li>
+                        <li>European weather forecasting centers</li>
+                        <li>Financial centers in London, Frankfurt</li>
+                    </ul>
+
+                    <p><strong>Asia-Pacific</strong>: Rapid growth in China, Japan, and South Korea</p>
+                    <ul>
+                        <li>Chinese tech giants (Alibaba, Tencent, Baidu)</li>
+                        <li>Japanese automotive and electronics companies</li>
+                        <li>South Korean semiconductor manufacturers</li>
+                    </ul>
+
+                    <h4 style="color: #764ba2; margin: 25px 0 15px 0;">Physical Locations</h4>
+                    <p><strong>Data Centers:</strong></p>
+                    <ul>
+                        <li><strong>Hyperscale Data Centers</strong>: Google, Facebook, Amazon, Microsoft</li>
+                        <li><strong>Enterprise Data Centers</strong>: Banks, insurance companies, manufacturers</li>
+                        <li><strong>Academic Computing Centers</strong>: Universities and research institutions</li>
+                    </ul>
+
+                    <h3 id="guide-when">When Was RDMA Developed and When Should You Use It?</h3>
+                    
+                    <h4 style="color: #764ba2; margin: 25px 0 15px 0;">Historical Development Timeline</h4>
+                    <p><strong>1998-2000: Genesis</strong></p>
+                    <ul>
+                        <li>1998: Intel releases NGIO specification</li>
+                        <li>1999: Mellanox founded to develop NGIO technology</li>
+                        <li>2000: InfiniBand Architecture Specification v1.0 released</li>
+                    </ul>
+
+                    <p><strong>2001-2005: Early Adoption</strong></p>
+                    <ul>
+                        <li>2001: Mellanox ships first InfiniBand products at 10 Gbit/s</li>
+                        <li>2003: Virginia Tech System X supercomputer uses InfiniBand</li>
+                        <li>2005: Linux kernel adds InfiniBand support</li>
+                    </ul>
+
+                    <p><strong>2011-2015: Mainstream Adoption</strong></p>
+                    <ul>
+                        <li>Microsoft adds RDMA support in Windows Server 2012 via SMB Direct</li>
+                        <li>Cloud providers begin RDMA integration</li>
+                        <li>40Gb and 100Gb RDMA networks become common</li>
+                    </ul>
+
+                    <h4 style="color: #764ba2; margin: 25px 0 15px 0;">When Should You Use RDMA?</h4>
+                    <div class="highlight-box">
+                        <strong>Immediate RDMA Benefits - Use Now If You Have:</strong>
+                        <ul style="margin-top: 15px;">
+                            <li><strong>High-Performance Computing</strong>: Scientific simulations, weather modeling</li>
+                            <li><strong>AI and Machine Learning</strong>: Distributed training of large neural networks</li>
+                            <li><strong>Financial Applications</strong>: High-frequency trading systems</li>
+                            <li><strong>Storage Systems</strong>: Network-attached storage requiring low latency</li>
+                        </ul>
+                    </div>
+
+                    <div class="highlight-box">
+                        <strong>Don't Use RDMA If:</strong>
+                        <ul style="margin-top: 15px;">
+                            <li>Your applications are primarily CPU-bound rather than network-bound</li>
+                            <li>You have low network traffic volumes</li>
+                            <li>Your budget is extremely constrained (RDMA hardware costs more)</li>
+                            <li>Your workloads don't require low latency or high throughput</li>
+                        </ul>
+                    </div>
+
+                    <h3 id="guide-why">Why Does RDMA Matter?</h3>
+                    
+                    <h4 style="color: #764ba2; margin: 25px 0 15px 0;">Performance Benefits</h4>
+                    <p><strong>Latency Reduction:</strong></p>
+                    <ul>
+                        <li><strong>Traditional TCP/IP</strong>: 50-200 microseconds typical latency</li>
+                        <li><strong>RDMA over Ethernet (RoCE)</strong>: 5-20 microseconds</li>
+                        <li><strong>InfiniBand RDMA</strong>: 1-5 microseconds</li>
+                        <li><strong>This represents a 10-100x improvement in latency</strong></li>
+                    </ul>
+
+                    <p><strong>CPU Efficiency:</strong></p>
+                    <ul>
+                        <li><strong>Traditional networking</strong>: 50-100% CPU usage for network processing at high speeds</li>
+                        <li><strong>RDMA</strong>: <5% CPU usage for the same network throughput</li>
+                        <li>Frees CPU cores for application processing instead of network overhead</li>
+                    </ul>
+
+                    <h4 style="color: #764ba2; margin: 25px 0 15px 0;">Real-World Impact Examples</h4>
+                    <div class="highlight-box">
+                        <p><strong>Scientific Computing:</strong> A weather modeling center reports:</p>
+                        <ul style="margin-top: 10px;">
+                            <li><strong>Before RDMA</strong>: Climate simulations took 48 hours using 1000 CPU cores</li>
+                            <li><strong>After RDMA</strong>: Same simulations complete in 12 hours using same hardware</li>
+                            <li><strong>Result</strong>: 4x faster time-to-solution, enabling more detailed forecasts</li>
+                        </ul>
+                    </div>
+
+                    <div class="highlight-box">
+                        <p><strong>Financial Trading:</strong> A high-frequency trading firm measured:</p>
+                        <ul style="margin-top: 10px;">
+                            <li><strong>TCP networking</strong>: 150 microsecond order execution time</li>
+                            <li><strong>RDMA networking</strong>: 15 microsecond order execution time</li>
+                            <li><strong>Impact</strong>: 10x faster trading execution, significant competitive advantage</li>
+                        </ul>
+                    </div>
+
+                    <h3 id="guide-standard-vs-enterprise">Standard RDMA vs Enterprise RDMA</h3>
+                    
+                    <p>The difference between "standard" and "enterprise" RDMA isn't just about cost - it's about completely different levels of capability, reliability, and performance.</p>
+
+                    <h4 style="color: #764ba2; margin: 25px 0 15px 0;">Hardware Differences</h4>
+                    <p><strong>Standard RDMA Cards:</strong></p>
+                    <ul>
+                        <li><strong>Examples</strong>: Used Mellanox ConnectX-3 ($30-50), ConnectX-4 Lx ($100-200)</li>
+                        <li><strong>Speeds</strong>: Typically 10-25 Gbps</li>
+                        <li><strong>Features</strong>: Basic RoCE or InfiniBand support</li>
+                        <li><strong>Warranty</strong>: 1-3 years</li>
+                    </ul>
+
+                    <p><strong>Enterprise RDMA Cards:</strong></p>
+                    <ul>
+                        <li><strong>Examples</strong>: Mellanox ConnectX-6 Dx ($800-1500), ConnectX-7 ($2000-4000)</li>
+                        <li><strong>Speeds</strong>: 25-400 Gbps per port</li>
+                        <li><strong>Advanced Features</strong>: Hardware-accelerated encryption, SR-IOV virtualization, GPU Direct RDMA</li>
+                        <li><strong>Warranty</strong>: 3-5+ years with advance replacement</li>
+                    </ul>
+
+                    <h4 style="color: #764ba2; margin: 25px 0 15px 0;">Performance Comparison</h4>
+                    <div style="overflow-x: auto; margin: 30px 0;">
+                        <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+                            <thead>
+                                <tr style="background: linear-gradient(45deg, #667eea, #764ba2); color: white;">
+                                    <th style="padding: 15px; text-align: left; font-weight: 600;">Feature</th>
+                                    <th style="padding: 15px; text-align: left; font-weight: 600;">Standard RDMA</th>
+                                    <th style="padding: 15px; text-align: left; font-weight: 600;">Enterprise RDMA</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    <td style="padding: 15px;"><strong>Hardware Cost</strong></td>
+                                    <td style="padding: 15px;">$50-500 per node</td>
+                                    <td style="padding: 15px;">$1,000-10,000+ per node</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    <td style="padding: 15px;"><strong>Maximum Speed</strong></td>
+                                    <td style="padding: 15px;">25 Gbps typical</td>
+                                    <td style="padding: 15px;">400 Gbps+</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    <td style="padding: 15px;"><strong>Latency</strong></td>
+                                    <td style="padding: 15px;">10-50 μs</td>
+                                    <td style="padding: 15px;">1-5 μs</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    <td style="padding: 15px;"><strong>Support</strong></td>
+                                    <td style="padding: 15px;">Community forums</td>
+                                    <td style="padding: 15px;">24/7 professional support</td>
+                                </tr>
+                                <tr style="border-bottom: 1px solid #eee;">
+                                    <td style="padding: 15px;"><strong>Deployment Scale</strong></td>
+                                    <td style="padding: 15px;"><100 nodes</td>
+                                    <td style="padding: 15px;">1000+ nodes</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <h3 id="guide-technical">Deep Technical Details</h3>
+                    
+                    <h4 style="color: #764ba2; margin: 25px 0 15px 0;">RDMA Protocol Types</h4>
+                    <p><strong>InfiniBand (IB) - The Original RDMA</strong></p>
+                    <ul>
+                        <li>Native RDMA protocol designed specifically for high-performance computing</li>
+                        <li>Uses credit-based flow control for guaranteed lossless communication</li>
+                        <li>Speeds: SDR (2.5 Gbps), DDR (5 Gbps), QDR (10 Gbps), FDR (14 Gbps), EDR (25 Gbps), HDR (50 Gbps)</li>
+                        <li><strong>Advantages</strong>: Lowest possible latency, guaranteed lossless delivery</li>
+                        <li><strong>Disadvantages</strong>: Requires specialized infrastructure, higher cost</li>
+                    </ul>
+
+                    <p><strong>RoCE (RDMA over Converged Ethernet)</strong></p>
+                    <ul>
+                        <li><strong>RoCE v1</strong>: Ethernet link layer protocol, limited to single broadcast domain</li>
+                        <li><strong>RoCE v2</strong>: Internet layer protocol, packets can be routed across IP networks</li>
+                        <li>Requires Data Center Bridging (DCB) support and Priority Flow Control (PFC)</li>
+                        <li><strong>Advantages</strong>: Uses existing Ethernet infrastructure, industry-wide support</li>
+                        <li><strong>Disadvantages</strong>: More complex network configuration, higher latency than InfiniBand</li>
+                    </ul>
+
+                    <p><strong>iWARP (Internet Wide Area RDMA Protocol)</strong></p>
+                    <ul>
+                        <li>Runs over TCP or SCTP for reliable data delivery</li>
+                        <li>Uses existing TCP/IP infrastructure without modification</li>
+                        <li><strong>Advantages</strong>: Works on standard TCP/IP networks, easiest to deploy</li>
+                        <li><strong>Disadvantages</strong>: Higher latency due to TCP overhead, scalability limitations</li>
+                    </ul>
+
+                    <h4 style="color: #764ba2; margin: 25px 0 15px 0;">Memory Management in RDMA</h4>
+                    <p><strong>Memory Registration Process:</strong></p>
+                    <ol>
+                        <li><strong>Application allocates memory</strong> using standard malloc() or similar</li>
+                        <li><strong>Memory registration API call</strong> (ibv_reg_mr() in InfiniBand verbs)</li>
+                        <li><strong>Kernel pins the memory pages</strong> in physical memory</li>
+                        <li><strong>Hardware gets direct access</strong> to physical memory addresses</li>
+                        <li><strong>Memory handle returned</strong> to application for RDMA operations</li>
+                    </ol>
+
+                    <p><strong>RDMA Memory Semantics:</strong></p>
+                    <ul>
+                        <li><strong>Two-Sided Operations (Send/Receive)</strong>: Both sender and receiver must participate, similar to traditional message passing</li>
+                        <li><strong>One-Sided Operations (Read/Write)</strong>: Only sender needs to initiate operation, direct read/write to remote memory</li>
+                    </ul>
+
+                    <h4 style="color: #764ba2; margin: 25px 0 15px 0;">Programming RDMA Applications</h4>
+                    <p><strong>InfiniBand Verbs API - Key Data Structures:</strong></p>
+                    <ul>
+                        <li><strong>Context</strong>: Represents an RDMA device</li>
+                        <li><strong>Protection Domain</strong>: Security boundary for memory regions</li>
+                        <li><strong>Memory Region</strong>: Registered memory available for RDMA</li>
+                        <li><strong>Queue Pair</strong>: Communication endpoint (like a socket)</li>
+                        <li><strong>Completion Queue</strong>: Notification mechanism for completed operations</li>
+                    </ul>
+
+                    <p><strong>Basic Programming Flow:</strong></p>
+                    <ol>
+                        <li>Open device and create context</li>
+                        <li>Allocate protection domain for security isolation</li>
+                        <li>Register memory regions for RDMA operations</li>
+                        <li>Create queue pairs for communication endpoints</li>
+                        <li>Post work requests for data transfer operations</li>
+                        <li>Poll completion queues for operation status</li>
+                    </ol>
+
+                    <h4 style="color: #764ba2; margin: 25px 0 15px 0;">Network Configuration for RDMA</h4>
+                    <p><strong>Lossless Ethernet Configuration (for RoCE):</strong></p>
+                    <ul>
+                        <li><strong>Priority Flow Control (PFC)</strong>: Enables flow control on specific traffic classes, prevents packet loss</li>
+                        <li><strong>Enhanced Transmission Selection (ETS)</strong>: Allocates bandwidth to different traffic classes</li>
+                        <li><strong>Data Center Bridging (DCB)</strong>: Umbrella standard including PFC and ETS</li>
+                    </ul>
+
+                    <p><strong>Network Topology Considerations:</strong></p>
+                    <ul>
+                        <li><strong>Fat-Tree Topology</strong>: Most common in modern data centers, provides multiple paths between nodes</li>
+                        <li><strong>Mesh/Torus Topologies</strong>: Common in HPC environments, direct connections between neighboring nodes</li>
+                        <li><strong>Bandwidth Provisioning</strong>: 1:1 bandwidth ideal for RDMA workloads</li>
+                    </ul>
+
+                    <h4 style="color: #764ba2; margin: 25px 0 15px 0;">Future of RDMA</h4>
+                    <p>RDMA technology continues to evolve with faster speeds (800G, 1.6T), better integration with cloud platforms, and enhanced support for emerging workloads like quantum computing and advanced AI systems. Key trends include:</p>
+                    <ul>
+                        <li><strong>Higher Speeds</strong>: 800Gbps and 1.6Tbps networks in development</li>
+                        <li><strong>Cloud Integration</strong>: Better support for virtualized and containerized environments</li>
+                        <li><strong>AI/ML Optimization</strong>: Specialized features for machine learning workloads</li>
+                        <li><strong>Security Enhancements</strong>: Hardware-based encryption and security features</li>
+                        <li><strong>Simplified Management</strong>: Automated configuration and self-healing networks</li>
+                    </ul>
+
+                    <div class="highlight-box">
+                        <h4 style="color: #333; margin-bottom: 15px;">Key Takeaways</h4>
+                        <p>RDMA represents a fundamental shift in how computers communicate over networks. By eliminating CPU overhead and enabling direct memory-to-memory transfers, RDMA provides the performance foundation for modern high-performance computing, AI/ML training, financial trading, and cloud computing applications. Understanding RDMA is essential for anyone working with performance-critical networked applications.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 40px;">
+                <button class="cta-button" onclick="scrollToSection('home')" style="font-size: 1.1rem;">
+                    Back to Top
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Quiz data
+        const quizData = [
+            {
+                question: "What is the primary advantage of RDMA over traditional networking?",
+                options: [
+                    "Higher bandwidth capacity",
+                    "Direct memory access bypassing CPU",
+                    "Better security features", 
+                    "Lower hardware costs"
+                ],
+                correct: 1
+            },
+            {
+                question: "Which RDMA protocol typically offers the lowest latency?",
+                options: [
+                    "iWARP",
+                    "RoCE",
+                    "InfiniBand",
+                    "TCP/IP"
+                ],
+                correct: 2
+            },
+            {
+                question: "What does 'zero-copy' networking mean in RDMA?",
+                options: [
+                    "No data is transmitted",
+                    "Data moves directly without CPU copying",
+                    "Network packets are empty",
+                    "No memory is used"
+                ],
+                correct: 1
+            },
+            {
+                question: "Which company acquired Mellanox in 2020?",
+                options: [
+                    "Intel",
+                    "AMD", 
+                    "NVIDIA",
+                    "Broadcom"
+                ],
+                correct: 2
+            },
+            {
+                question: "What is the typical latency range for InfiniBand RDMA?",
+                options: [
+                    "50-200 microseconds",
+                    "20-50 microseconds",
+                    "5-20 microseconds",
+                    "1-5 microseconds"
+                ],
+                correct: 3
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let answered = false;
+
+        // Navigation functionality
+        function scrollToSection(sectionId) {
+            const element = document.getElementById(sectionId);
+            element.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Show navigation on scroll
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('nav');
+            if (window.scrollY > 100) {
+                nav.classList.add('visible');
+            } else {
+                nav.classList.remove('visible');
+            }
+
+            // Show sections on scroll
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(section => {
+                const rect = section.getBoundingClientRect();
+                if (rect.top < window.innerHeight * 0.75) {
+                    section.classList.add('visible');
+                }
+            });
+
+            // Update active nav link
+            const navLinks = document.querySelectorAll('.nav-link');
+            sections.forEach((section, index) => {
+                const rect = section.getBoundingClientRect();
+                if (rect.top <= 100 && rect.bottom >= 100) {
+                    navLinks.forEach(link => link.classList.remove('active'));
+                    const correspondingLink = document.querySelector(`[href="#${section.id}"]`);
+                    if (correspondingLink) {
+                        correspondingLink.classList.add('active');
+                    }
+                }
+            });
+        });
+
+        // Quiz functionality
+        function selectAnswer(selectedIndex) {
+            if (answered) return;
+            
+            answered = true;
+            const options = document.querySelectorAll('.quiz-option');
+            const correct = quizData[currentQuestion].correct;
+            
+            options.forEach((option, index) => {
+                if (index === correct) {
+                    option.classList.add('correct');
+                } else if (index === selectedIndex && selectedIndex !== correct) {
+                    option.classList.add('incorrect');
+                }
+                option.style.pointerEvents = 'none';
+            });
+            
+            if (selectedIndex === correct) {
+                score++;
+            }
+            
+            setTimeout(nextQuestion, 2000);
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            
+            if (currentQuestion >= quizData.length) {
+                showResults();
+                return;
+            }
+            
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            answered = false;
+            const question = quizData[currentQuestion];
+            
+            document.getElementById('quizQuestion').textContent = question.question;
+            document.getElementById('quizScore').textContent = `Question ${currentQuestion + 1} of ${quizData.length}`;
+            
+            const optionsContainer = document.getElementById('quizOptions');
+            optionsContainer.innerHTML = '';
+            
+            question.options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'quiz-option';
+                optionElement.textContent = option;
+                optionElement.onclick = () => selectAnswer(index);
+                optionsContainer.appendChild(optionElement);
+            });
+            
+            // Update progress bar
+            const progress = ((currentQuestion) / quizData.length) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+        }
+
+        function showResults() {
+            const percentage = Math.round((score / quizData.length) * 100);
+            let message = '';
+            
+            if (percentage >= 80) {
+                message = 'Excellent! You have a strong understanding of RDMA.';
+            } else if (percentage >= 60) {
+                message = 'Good job! You grasp the key concepts.';
+            } else {
+                message = 'Keep learning! Review the guide for better understanding.';
+            }
+            
+            document.getElementById('quizContent').innerHTML = `
+                <div style="text-align: center;">
+                    <h3 style="color: #667eea; margin-bottom: 20px;">Quiz Complete!</h3>
+                    <div class="stat-number" style="color: #28a745;">${percentage}%</div>
+                    <p style="font-size: 1.1rem; margin: 20px 0;">${message}</p>
+                    <p>You scored ${score} out of ${quizData.length} questions correctly.</p>
+                    <button class="cta-button" onclick="restartQuiz()" style="margin-top: 20px; font-size: 1rem; padding: 10px 30px;">
+                        Try Again
+                    </button>
+                </div>
+            `;
+            
+            document.getElementById('progressFill').style.width = '100%';
+        }
+
+        function restartQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            answered = false;
+            loadQuestion();
+        }
+
+        // Add click handlers for nav links
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href').substring(1);
+                scrollToSection(targetId);
+            });
+        });
+
+        // Initialize quiz
+        loadQuestion();
+
+        // Show first section on load
+        setTimeout(() => {
+            document.getElementById('what').classList.add('visible');
+        }, 500);
+    </script>
